@@ -9,7 +9,7 @@ import (
 
 	"github.com/emersion/go-sasl"
 	"github.com/emersion/go-smtp"
-	"github.com/oliverpool/analyzer"
+	analyzer "github.com/oliverpool/go-smtp-dmarc-analyzer"
 
 	"github.com/kelseyhightower/envconfig"
 

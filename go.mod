@@ -1,4 +1,4 @@
-module github.com/oliverpool/analyzer
+module github.com/oliverpool/go-smtp-dmarc-analyzer
 
 go 1.14
 
