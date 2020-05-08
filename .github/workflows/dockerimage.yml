@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    ‐ name: Docker build-push
+    - name: Docker build-push
       uses: docker/build-push-action@v1
       with:
         username: ${{ DOCKER_USERNAME }}
