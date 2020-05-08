@@ -14,6 +14,8 @@ RUN make build
 # Runner
 FROM gcr.io/distroless/base
 
+EXPOSE 25
+
 COPY --from=build-env /build/app /
 
 CMD ["/app"]
