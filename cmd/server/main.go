@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"time"
 
@@ -77,9 +80,65 @@ func emailForwarder(logger kitlog.Logger, cfg forwarder) func(io.Reader) {
 		auth = sasl.NewPlainClient("", cfg.Username, cfg.Password)
 	}
 	return func(r io.Reader) {
-		err := smtp.SendMail(cfg.Addr, auth, cfg.From, cfg.To, r)
+		err := sendMail(cfg.Addr, auth, cfg.From, cfg.To, r)
 		if err != nil && logger != nil {
 			logger.Log("err", err)
 		}
 	}
+}
+
+// Function belows are a copy from the github.com/emersion/go-smtp repo
+// with a DialTLS
+// And a timeout
+
+func dialTLS(addr string, tlsConfig *tls.Config) (*smtp.Client, error) {
+	dialer := &net.Dialer{Timeout: 5 * time.Second}
+	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+	host, _, _ := net.SplitHostPort(addr)
+	return smtp.NewClient(conn, host)
+}
+
+func sendMail(addr string, a sasl.Client, from string, to []string, r io.Reader) error {
+	c, err := dialTLS(addr, nil)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	if ok, _ := c.Extension("STARTTLS"); ok {
+		if err = c.StartTLS(nil); err != nil {
+			return err
+		}
+	}
+	if a != nil {
+		if ok, _ := c.Extension("AUTH"); !ok {
+			return errors.New("smtp: server doesn't support AUTH")
+		}
+		if err = c.Auth(a); err != nil {
+			return err
+		}
+	}
+	if err = c.Mail(from, nil); err != nil {
+		return err
+	}
+	for _, addr := range to {
+		if err = c.Rcpt(addr); err != nil {
+			return err
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, r)
+	if err != nil {
+		return err
+	}
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+	return c.Quit()
 }
