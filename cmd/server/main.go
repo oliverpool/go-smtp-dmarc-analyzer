@@ -50,7 +50,7 @@ func run() error {
 	}
 
 	logger := kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stdout))
-	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestampUTC, "caller", kitlog.DefaultCaller)
+	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestamp)
 
 	be := &analyzer.Backend{
 		Logger:      kitlog.With(logger, "module", "dmarc-checker"),
